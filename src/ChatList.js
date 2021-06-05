@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import ChatItem from './ChatItem'
 
 const ChatList = (props) => {

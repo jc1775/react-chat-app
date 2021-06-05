@@ -8,161 +8,107 @@ import firebase from "./firebase"
 import { FireSQL } from 'firesql';
 import 'firesql/rx'; // <-- Important! Don't forget
 import 'firebase/firestore';
+import { useAuth } from './contexts/AuthContext'
 
 const Dashboard = () => {
 
 
     let swipeEl;
-    let mainChatView;
+
     const [colourClass0, setColour0] = useState('selected');
     const [colourClass1, setColour1] = useState('');
     const [colourClass2, setColour2] = useState('');
     const [viewMessages, setMessages] = useState([]);
-    const [updateMessageView, forceUpdateMessages] = useState(0)
     const [chatID, setChatID] = useState('');
-    const CHATSref = firebase.firestore().collection("chats")
+    const [chats ,setChats] = useState([]);
+    const [allUsers ,setAllUsers] = useState([]);
+    const [isLoading, setIsLoading] = useState(true)
+    const [chatMembers, setChatMembers] = useState([])
+    const [reloadContacts, setReloadContacts] = useState(false)
+    //const [reloadChats, setReloadChats] = useState(false)
+    const [minimizeEverything, setMinimizeEverything] = useState(false)
+
     const MESSAGESref = firebase.firestore().collection("messages")
     const fireSQL = new FireSQL(firebase.firestore())
-    const [chats ,setChats] = useState([]);
-    let chatsVar = [];
-    
-    
+    const { currentUser } = useAuth()
+
+    var usersRef
+    var usersActiveChats = []
+
+    useEffect(()=>{
+        if (reloadContacts) {
+            console.log("Reloading Contacts..........")
+            setReloadContacts(false)
+            usersRef = firebase.firestore().collection("users")
+            populateContactsList()
+        }
+    },[reloadContacts])
 
     useEffect(() =>{
-        getChats()
+        usersRef = firebase.firestore().collection("users")
+        populateActiveChats()
+        populateContactsList()
     },[])
 
+    async function populateContactsList(){
+        await usersRef.get().then((usersDoc) => {
+            var foundUsers = []
+            usersDoc.forEach((doc) => {
+                if (doc.data().email !== currentUser.email) {
+                    foundUsers.push(doc.data())
+                }
+            })
+            setAllUsers(foundUsers)
+        })
+    }
 
-    function getChats(){
-        CHATSref.onSnapshot((querySnapshot) => {
-            const items = [];
-            querySnapshot.forEach((doc) => {           
-                items.push(doc.data())
-                
-            });
-            setChats(items)
-            chatsVar = [...items]
-            var id = document.querySelector("#chat-messages").getAttribute("chatid")
-            console.log("Chat ID is: ", id)
-            refreshChat(id)
-            
+    function populateActiveChats() {
+        console.log("Trying to get active chat list")
+        var currentUserIDCLEANED = "'" + currentUser.uid + "'"
+        const usersChats$ = fireSQL.rxQuery(`
+            SELECT activeChats
+            FROM users
+            WHERE uid = (`+ currentUserIDCLEANED +`)`
+        );
+        usersChats$.subscribe(results =>{
+            //console.log(results[0].activeChats)
+            usersActiveChats = results[0].activeChats
+            if (usersActiveChats.toString() !== '[object Object]') {
+                getChats()        
+            } else{
+                setIsLoading(false)
+            }
+        })
+    }
+
+    const getChats = () =>{
+        console.log("Trying to get chats")
+        console.log(usersActiveChats.toString())
+        var usersActiveChatsCLEANED = "'" + usersActiveChats.join("','") + "'";
+        const chats$ = fireSQL.rxQuery(`
+            SELECT *
+            FROM chats
+            WHERE id IN (`+ usersActiveChatsCLEANED +`)`
+        );
+        chats$.subscribe(results => {
+            console.log("Subscribing to chats")
+            var newResults = [...results]
+            setChats(newResults)
+            setIsLoading(false)
         });
     }
-
-    function refreshChat(id){
-        if (id !== ''){
-            var chatID = parseInt(id)
-            var chatObj = chatsVar.filter(obj => {
-                return obj.id === chatID
-            })
-            var chatMessages = chatObj[0].messages
-            setMessages(chatMessages)
-            setChatID(chatID)
-            console.log("Chat loaded")
-            chatScrollToBottom()
-        }
-    }
-
-/*
-    const [chats, setChats] = useState([
-        {chatImage: 'logo192.png', chatName: 'Joseph Calarco', recentText: 'lorem impsum...', timeUpdated: '5/20/21', id: 1, messages: [
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 1},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 2},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 3},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 4},
-            {author: 'Joseph Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 5},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 6},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 7},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 8},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 9},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 10},
-
-        ]},
-        {chatImage: 'logo192.png', chatName: 'Joseph Calarco', recentText: 'lorem impsum...', timeUpdated: '5/20/21', id: 2, messages: [
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 1},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 2},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 3},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 4},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 5},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 6},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 7},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 8},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 9},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 10},
-
-        ]},
-        {chatImage: 'logo192.png', chatName: 'Joseph Calarco', recentText: 'lorem impsum...', timeUpdated: '5/20/21', id: 3, messages: [
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 1},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 2},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 3},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 4},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 5},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 6},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 7},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 8},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 9},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 10},
-
-        ]},
-        {chatImage: 'logo192.png', chatName: 'Joseph Calarco', recentText: 'lorem impsum...', timeUpdated: '5/20/21', id: 4, messages: [
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 1},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 2},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 3},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 4},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 5},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 6},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 7},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 8},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 9},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 10},
-
-        ]},
-        {chatImage: 'logo192.png', chatName: 'Joseph Calarco', recentText: 'lorem impsum...', timeUpdated: '5/20/21', id: 5, messages: [
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 1},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 2},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 3},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 4},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 5},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 6},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 7},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 8},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 9},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 10},
-
-        ]},
-        {chatImage: 'logo192.png', chatName: 'Joseph Calarco', recentText: 'lorem impsum...', timeUpdated: '5/20/21', id: 6, messages: [
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 1},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 2},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 3},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 4},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 5},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 6},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 7},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 8},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 9},
-            {author: 'Antonino Calarco', time: '1:25 PM', content:'Hello Joseph this is a test message' ,id: 10},
-
-        ]},
-        
-    ]);
-
-    */
 
     const goToChat = (id) => {     
         swipeEl.slide(1,500)
         var chatID = id.chatID
         var chatMessages
-        /*
-        const messagesPromise = fireSQL.query(`
-            SELECT *
-            FROM messages
-            WHERE chatID =` + chatID +`
-            ORDER BY timestamp`
-        ); */
+        console.log("Trying to get messages for: ", chatID)
+        var chatIDCLEANED = "'"+ chatID + "'"
+        setIsLoading(true)
         const messages$ = fireSQL.rxQuery(`
             SELECT *
             FROM messages
-            WHERE chatID =` + chatID +`
+            WHERE chatID =` + chatIDCLEANED +`
             ORDER BY timestamp`
         );
         messages$.subscribe(results => {
@@ -170,7 +116,7 @@ const Dashboard = () => {
         chatMessages = results
         setMessages(chatMessages)
         setChatID(chatID)
-        console.log("Chat loaded")
+        setIsLoading(false)
         chatScrollToBottom()
         });
     }
@@ -181,10 +127,11 @@ const Dashboard = () => {
         } else {
             var chatID = id.chatID
             var chatMessages
+            var chatIDCLEANED = "'"+ chatID + "'"
             const messagesPromiseInit = fireSQL.query(`
                 SELECT *
                 FROM messages
-                WHERE chatID =` + chatID
+                WHERE chatID =` + chatIDCLEANED
             );
             messagesPromiseInit.then(messages => {
                 console.log(messages)
@@ -198,14 +145,14 @@ const Dashboard = () => {
                 const messagesPromiseEnd = fireSQL.query(`
                     SELECT *
                     FROM messages
-                    WHERE chatID =` + chatID +`
+                    WHERE chatID =` + chatIDCLEANED +`
                     ORDER BY timestamp`
                 );
 
                 messagesPromiseEnd.then(messages => {
                     console.log(messages)
                     chatMessages = messages
-                    callback(chatMessages)
+                    //callback(chatMessages)
                 });
             });
 
@@ -230,9 +177,11 @@ const Dashboard = () => {
         },100)
         
     }
+
     const goToChatBasic = () => {
         swipeEl.slide(1,500)
     }
+    
     const changeButtonColour = (index) => {
         var slideIndex = index
         var messageTextElement = document.querySelector("textarea.messageInput");
@@ -256,18 +205,22 @@ const Dashboard = () => {
     return ( 
         <div className="dashboardWindow">
             
-            <ContactsBar></ContactsBar>
-            <NewChat></NewChat>
+            <ContactsBar setMinimizeEverything={setMinimizeEverything} minimizeEverything={minimizeEverything} setReloadContacts={setReloadContacts} setChatMembers={setChatMembers} allUsers={allUsers}></ContactsBar>
+            <NewChat setMinimizeEverything={setMinimizeEverything} chatGroup={chatMembers}></NewChat>
             <div>
             <nav className="dashButtons">
                 <button className={colourClass0} id='chats' onClick={() => swipeEl.slide(0,500)}>CHATS</button>
                 <button className={colourClass1} id='chat-messages' onClick={goToChatBasic} chatid={chatID}>CHAT_NAME</button>
                 <button className={colourClass2} id='chat-tools' onClick={() => swipeEl.slide(2,500)}>CHAT_TOOLS</button>
             </nav>
-            
+            { isLoading && <div className="loading" ><img src="loader.svg" alt="" /></div>}
             <Swipe ref={o => swipeEl = o} callback={changeButtonColour} startSlide={0} auto={0} >
-                <SwipeItem><ChatList  goToChat={goToChat} chats={chats}></ChatList></SwipeItem>
-                <SwipeItem><ChatView newSentMessage={newSentMessage} messageList={viewMessages} chatID={chatID}></ChatView></SwipeItem>
+                <SwipeItem>
+                    <ChatList  goToChat={goToChat} chats={chats}></ChatList>
+                </SwipeItem>
+                <SwipeItem>
+                    <ChatView newSentMessage={newSentMessage} messageList={viewMessages} chatID={chatID}></ChatView>
+                </SwipeItem>
                 <SwipeItem></SwipeItem>
             </Swipe>            
             </div>

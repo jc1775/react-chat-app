@@ -1,12 +1,14 @@
 import Message from "./Message"
 import { useEffect } from 'react';
-import firebase from "./firebase"
+import { useAuth } from './contexts/AuthContext'
 
 const ChatView = (props) => {
     let messageList = props.messageList
     const newMessageList = Object.keys(messageList).map((key)=> [Number(key), messageList[key]])
+    const { currentUser } = useAuth()
     let newSentMessage = props.newSentMessage
     let chatID = props.chatID
+
     useEffect(() => {
         var messageArea = document.querySelector("div.sendMessage");
         var messageTextElement = document.querySelector("textarea.messageInput");
@@ -33,7 +35,7 @@ const ChatView = (props) => {
                 {newMessageList.map((message) => (
                     <Message 
                     key={message[1].messageID} 
-                    type={ message[1].author === 'Joseph Calarco' ? 'sent': 'received' } 
+                    type={ message[1].authorID === currentUser.uid ? 'sent': 'received' } 
                     author={message[1].author} 
                     messageContent={message[1].content} 
                     time={message[1].timestamp.toDate().toLocaleTimeString().slice(0,-6) + " " +  message[1].timestamp.toDate().toLocaleTimeString().slice(-2)
@@ -42,7 +44,7 @@ const ChatView = (props) => {
             </div>
             <div className="sendMessage">
                 <textarea wrap="hard" placeholder='Type a message' type="text" className="messageInput" />
-                <button className="sendMessageButton" onClick={() => newSentMessage([{chatID},{author: 'Joseph Calarco', time: '1:25 PM', content:getText()}])}> 
+                <button className="sendMessageButton" onClick={() => newSentMessage([{chatID},{authorID:currentUser.uid ,author: currentUser.displayName, time: '1:25 PM', content:getText()}])}> 
                     <img src="message.svg" alt="" />
                 </button>
             </div>

@@ -1,16 +1,14 @@
+import { useAuth } from './contexts/AuthContext'
+import NavbarLoggedIn from './NavbarLoggedIn';
+import NavbarLoggedOut from './NavbarLoggedOut';
+
 const Navbar = () => {
-    return ( 
-        <nav className="navbar">
-            <h1>Test Chat App</h1>
-            <div className="links">
-                <a href="/">Home</a>
-                <a href="/create"style={{
-                    color: "white",
-                    backgroundColor: "#f1356d",
-                    borderRadius: '8px'
-                }}>New blog</a>
-            </div>
-        </nav>
+    const { currentUser } = useAuth()
+    return (
+        
+        <div className="navHolder">
+            { currentUser ? <NavbarLoggedIn></NavbarLoggedIn> : <NavbarLoggedOut></NavbarLoggedOut>}
+        </div>
      );
 }
  

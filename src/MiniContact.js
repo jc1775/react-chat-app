@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
 const MiniContact = (props) => {
-
+    let contactImage = props.contactImage
+    let email = props.email
+    let displayName = props.displayName
 
     return ( 
-        <div className="miniContact" >
+        <div contact-display-name={displayName} contact-email={email} className="miniContact" >
 
-            <img src="logo192.png" alt="" className="contactPicture" />
+            <img src={contactImage} alt={email} className="contactPicture" />
         </div>
      );
 }
