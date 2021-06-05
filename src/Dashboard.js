@@ -10,15 +10,18 @@ import 'firesql/rx'; // <-- Important! Don't forget
 import 'firebase/firestore';
 import { useAuth } from './contexts/AuthContext'
 
-const Dashboard = () => {
+const Dashboard = (props) => {
 
 
     let swipeEl;
+    let currentUserInfo = props.currentUserInfo
+    let setCurrentUserInfo = props.setCurrentUserInfo
 
     const [colourClass0, setColour0] = useState('selected');
     const [colourClass1, setColour1] = useState('');
     const [colourClass2, setColour2] = useState('');
     const [viewMessages, setMessages] = useState([]);
+
     const [chatID, setChatID] = useState('');
     const [chats ,setChats] = useState([]);
     const [allUsers ,setAllUsers] = useState([]);
@@ -33,6 +36,7 @@ const Dashboard = () => {
     const { currentUser } = useAuth()
 
     var usersRef
+    var userRef
     var usersActiveChats = []
 
     useEffect(()=>{
@@ -45,10 +49,18 @@ const Dashboard = () => {
     },[reloadContacts])
 
     useEffect(() =>{
+        userRef = firebase.firestore().doc("users/" + currentUser.uid)
         usersRef = firebase.firestore().collection("users")
+        getUserInfo()
         populateActiveChats()
         populateContactsList()
     },[])
+
+    async function getUserInfo() {
+        await userRef.get().then((userInfo) => {
+            setCurrentUserInfo(userInfo.data())
+        })
+    }
 
     async function populateContactsList(){
         await usersRef.get().then((usersDoc) => {
@@ -142,6 +154,15 @@ const Dashboard = () => {
                 messageContent.chatID = chatID
                 messageContent.timestamp = firebase.firestore.Timestamp.fromDate(new Date())
                 MESSAGESref.add(messageContent)
+                var currentChatRef = firebase.firestore().doc("chats/"+chatID)
+                var recentTextContent = messageContent.author + ": " + messageContent.content
+                if (recentTextContent.length > 40) {
+                    recentTextContent = recentTextContent.slice(0,37) + "..."
+                }
+                currentChatRef.update({
+                    recentText: recentTextContent,
+                    timeUpdated: messageContent.time
+                })
                 const messagesPromiseEnd = fireSQL.query(`
                     SELECT *
                     FROM messages
@@ -156,9 +177,6 @@ const Dashboard = () => {
                 });
             });
 
-            
-
-           
         } 
     }
 
@@ -181,7 +199,7 @@ const Dashboard = () => {
     const goToChatBasic = () => {
         swipeEl.slide(1,500)
     }
-    
+
     const changeButtonColour = (index) => {
         var slideIndex = index
         var messageTextElement = document.querySelector("textarea.messageInput");
@@ -219,7 +237,7 @@ const Dashboard = () => {
                     <ChatList  goToChat={goToChat} chats={chats}></ChatList>
                 </SwipeItem>
                 <SwipeItem>
-                    <ChatView newSentMessage={newSentMessage} messageList={viewMessages} chatID={chatID}></ChatView>
+                    <ChatView currentUserInfo={currentUserInfo} newSentMessage={newSentMessage} messageList={viewMessages} chatID={chatID}></ChatView>
                 </SwipeItem>
                 <SwipeItem></SwipeItem>
             </Swipe>            

@@ -5,10 +5,13 @@ import { BrowserRouter as Router , Route, Switch} from 'react-router-dom'
 import Profile from './Profile';
 import Signup from './Signup'
 import { AuthProvider } from './contexts/AuthContext';
+import { useState } from 'react';
 
 
 
 function App() {
+  const [currentUserInfo, setCurrentUserInfo] = useState()
+
   return (
     
     <Router>
@@ -26,10 +29,10 @@ function App() {
             <LoginPage></LoginPage>
           </Route>
           <Route exact path="/dashboard">
-            <Dashboard></Dashboard>
+            <Dashboard currentUserInfo={currentUserInfo} setCurrentUserInfo={setCurrentUserInfo} ></Dashboard>
           </Route>
           <Route exact path="/profile">
-            <Profile></Profile>
+            <Profile currentUserInfo={currentUserInfo} ></Profile>
           </Route>
         </Switch>
         <div className="dragOverlay"></div>

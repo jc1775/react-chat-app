@@ -6,25 +6,14 @@ import 'firebase/firestore';
 import {useEffect, useState, useRef} from 'react';
 
 
-const Profile = () => {
-    const [userData, setUserData] = useState({})
-    const { currentUser } = useAuth()
+const Profile = (props) => {
+    let userData= props.currentUserInfo
+    //const [userData, setUserData] = useState({})
+    //const { currentUser } = useAuth()
 
     const displayNameRef = useRef()
     const birthdayRef = useRef()
     const statusRef = useRef()
-
-    var userRef
-
-    async function getUserInfo() {
-        await userRef.get().then((userInfo) => {
-            setUserData(userInfo.data())
-        })
-    }
-    useEffect(() =>{
-        userRef = firebase.firestore().doc("users/" + currentUser.uid)
-        getUserInfo()
-    },[])
 
     return ( 
         <div className="profilePage">
@@ -41,8 +30,6 @@ const Profile = () => {
                 <h2>Status</h2>
                 <input type="text" placeholder="" ref={statusRef}/>
                 <input type="submit" value="Update profile" />
-
-
             </form>
         </div>
      );

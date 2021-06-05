@@ -134,6 +134,7 @@ input:focus{
 .chatContext{
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 .chatContext h2{
   color: white;
@@ -154,11 +155,13 @@ input:focus{
   height: 100%;
   position: absolute;
   z-index: 2;
+
   display: none;
   grid-template-columns: 1fr;
-  grid-template-rows: 0.6fr 1fr 1.4fr;
+  grid-template-rows: 0.5fr 1fr 0.8fr 0.7fr;
   gap: 0px 0px;
   grid-template-areas:
+    "."
     "."
     "."
     ".";
@@ -181,6 +184,20 @@ input:focus{
   font-size: 18px;
   overflow-wrap: normal;
   background-color: #075E54;
+}
+
+.chatContext input{
+  width: 75%;
+  height: 18px;
+  border-radius: 10vh;
+  border: none;
+  padding: 10px 10px 15px 10px;
+  font-weight: 500;
+  color: white;
+  font-size: 18px;
+  overflow-wrap: normal;
+  background-color: #075E54;
+  text-align: center;
 }
 
 .contactSearch button{
@@ -213,6 +230,7 @@ input:focus{
   border-radius: 10vh;
   border: none;
   padding: 5px;
+  transition-duration: 1000ms;
 }
 
 .dragOverlay{
