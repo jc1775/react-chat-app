@@ -2,12 +2,13 @@ import { useAuth } from './contexts/AuthContext'
 import NavbarLoggedIn from './NavbarLoggedIn';
 import NavbarLoggedOut from './NavbarLoggedOut';
 
-const Navbar = () => {
+const Navbar = (props) => {
     const { currentUser } = useAuth()
+    let setAddingContact = props.setAddingContact
     return (
         
         <div className="navHolder">
-            { currentUser ? <NavbarLoggedIn></NavbarLoggedIn> : <NavbarLoggedOut></NavbarLoggedOut>}
+            { currentUser ? <NavbarLoggedIn setAddingContact={setAddingContact}></NavbarLoggedIn> : <NavbarLoggedOut></NavbarLoggedOut>}
         </div>
      );
 }

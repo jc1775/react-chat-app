@@ -9,6 +9,7 @@ import { FireSQL } from 'firesql';
 import 'firesql/rx'; // <-- Important! Don't forget
 import 'firebase/firestore';
 import { useAuth } from './contexts/AuthContext'
+import AddContact from './AddContact';
 
 const Dashboard = (props) => {
 
@@ -21,14 +22,16 @@ const Dashboard = (props) => {
     const [colourClass1, setColour1] = useState('');
     const [colourClass2, setColour2] = useState('');
     const [viewMessages, setMessages] = useState([]);
+    const [chatName, setChatName] = useState('Empty');
+    const [chatSelected, isChatSelected] = useState(false)
 
     const [chatID, setChatID] = useState('');
     const [chats ,setChats] = useState([]);
+    const [contactRequests, setContactRequests] = useState(false);
     const [allUsers ,setAllUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true)
     const [chatMembers, setChatMembers] = useState([])
     const [reloadContacts, setReloadContacts] = useState(false)
-    //const [reloadChats, setReloadChats] = useState(false)
     const [minimizeEverything, setMinimizeEverything] = useState(false)
 
     const MESSAGESref = firebase.firestore().collection("messages")
@@ -38,6 +41,8 @@ const Dashboard = (props) => {
     var usersRef
     var userRef
     var usersActiveChats = []
+    var userContactList = []
+    var currentContactList = []
 
     useEffect(()=>{
         if (reloadContacts) {
@@ -49,41 +54,57 @@ const Dashboard = (props) => {
     },[reloadContacts])
 
     useEffect(() =>{
+        
         userRef = firebase.firestore().doc("users/" + currentUser.uid)
         usersRef = firebase.firestore().collection("users")
         getUserInfo()
+        getContactRequests()
         populateActiveChats()
         populateContactsList()
     },[])
 
     async function getUserInfo() {
-        await userRef.get().then((userInfo) => {
+        await userRef.onSnapshot((userInfo) => {
             setCurrentUserInfo(userInfo.data())
+            if (currentContactList === []) {
+                currentContactList = userInfo.data().contactList
+            } else if (currentContactList !== userInfo.data().contactList) {
+                currentContactList = userInfo.data().contactList
+                setReloadContacts(true)
+            }
         })
     }
 
     async function populateContactsList(){
-        await usersRef.get().then((usersDoc) => {
-            var foundUsers = []
-            usersDoc.forEach((doc) => {
-                if (doc.data().email !== currentUser.email) {
-                    foundUsers.push(doc.data())
-                }
-            })
-            setAllUsers(foundUsers)
+        await firebase.firestore().doc("users/" + currentUser.uid).get().then((result) => {
+            userContactList = result.data().contactList
         })
+
+        if (userContactList.length !== 0) {
+            await usersRef.where("uid","in", userContactList).onSnapshot((usersDoc) => {
+                var foundUsers = []
+                usersDoc.forEach((doc) => {
+                    if (doc.data().email !== currentUser.email) {
+                        foundUsers.push(doc.data())
+                    }
+                })
+                setAllUsers(foundUsers)
+            })
+        }
+        
     }
 
     function populateActiveChats() {
         console.log("Trying to get active chat list")
         var currentUserIDCLEANED = "'" + currentUser.uid + "'"
+        console.log(currentUserIDCLEANED)
         const usersChats$ = fireSQL.rxQuery(`
             SELECT activeChats
             FROM users
             WHERE uid = (`+ currentUserIDCLEANED +`)`
         );
         usersChats$.subscribe(results =>{
-            //console.log(results[0].activeChats)
+            console.log(results)
             usersActiveChats = results[0].activeChats
             if (usersActiveChats.toString() !== '[object Object]') {
                 getChats()        
@@ -100,7 +121,8 @@ const Dashboard = (props) => {
         const chats$ = fireSQL.rxQuery(`
             SELECT *
             FROM chats
-            WHERE id IN (`+ usersActiveChatsCLEANED +`)`
+            WHERE id IN (`+ usersActiveChatsCLEANED +`)
+            ORDER BY timestamp DESC`
         );
         chats$.subscribe(results => {
             console.log("Subscribing to chats")
@@ -110,9 +132,31 @@ const Dashboard = (props) => {
         });
     }
 
-    const goToChat = (id) => {     
+    const getContactRequests = () =>{
+        console.log("Trying to get contactRequests")
+        var cleanUID = "'" + currentUser.uid + "'"
+        const conactrequests$ = fireSQL.rxQuery(`
+            SELECT receivedContactInvitesList
+            FROM users
+            WHERE uid = (`+ cleanUID  +`)`
+        );
+        conactrequests$.subscribe(results => {
+            console.log("Subscribing to contactRequests")
+            if (typeof results[0] !== 'undefined') {
+                var results2 = results[0].receivedContactInvitesList
+                var newResults = [...results2]
+                setContactRequests(newResults)
+            }
+            
+        });
+    }
+
+    const goToChat = (id, cName) => {    
+        isChatSelected(true) 
         swipeEl.slide(1,500)
-        var chatID = id.chatID
+        setChatName(cName)
+        console.log(cName)
+        var chatID = id
         var chatMessages
         console.log("Trying to get messages for: ", chatID)
         var chatIDCLEANED = "'"+ chatID + "'"
@@ -133,7 +177,8 @@ const Dashboard = (props) => {
         });
     }
     
-    function newSentMessage([id, messageContent], callback = refreshMessageList) {
+    function newSentMessage(e, [id, messageContent], callback = refreshMessageList) {
+        e.preventDefault()
         if (messageContent.content.replace(/ /g,'') === '' ) {
             console.log("blank")
         } else {
@@ -161,7 +206,8 @@ const Dashboard = (props) => {
                 }
                 currentChatRef.update({
                     recentText: recentTextContent,
-                    timeUpdated: messageContent.time
+                    timeUpdated: messageContent.time,
+                    timestamp: firebase.firestore.Timestamp.fromDate(new Date())
                 })
                 const messagesPromiseEnd = fireSQL.query(`
                     SELECT *
@@ -222,24 +268,25 @@ const Dashboard = (props) => {
 
     return ( 
         <div className="dashboardWindow">
-            
             <ContactsBar setMinimizeEverything={setMinimizeEverything} minimizeEverything={minimizeEverything} setReloadContacts={setReloadContacts} setChatMembers={setChatMembers} allUsers={allUsers}></ContactsBar>
-            <NewChat setMinimizeEverything={setMinimizeEverything} chatGroup={chatMembers}></NewChat>
+            <NewChat minimizeEverything={minimizeEverything} setMinimizeEverything={setMinimizeEverything} chatGroup={chatMembers}></NewChat>
             <div>
             <nav className="dashButtons">
-                <button className={colourClass0} id='chats' onClick={() => swipeEl.slide(0,500)}>CHATS</button>
-                <button className={colourClass1} id='chat-messages' onClick={goToChatBasic} chatid={chatID}>CHAT_NAME</button>
-                <button className={colourClass2} id='chat-tools' onClick={() => swipeEl.slide(2,500)}>CHAT_TOOLS</button>
+                <button style={chatSelected ? {} : {width: "300%"} } className={colourClass0} id='chats' onClick={() => swipeEl.slide(0,500)}>CHATS</button>
+                <button style={chatSelected ? {} : {display: "none"} } className={colourClass1} id='chat-messages' onClick={goToChatBasic} chatid={chatID}>{chatName}</button>
+                <button style={chatSelected ? {} : {display: "none"} } className={colourClass2} id='chat-tools' onClick={() => swipeEl.slide(2,500)}>CHAT_TOOLS</button>
             </nav>
             { isLoading && <div className="loading" ><img src="loader.svg" alt="" /></div>}
-            <Swipe ref={o => swipeEl = o} callback={changeButtonColour} startSlide={0} auto={0} >
+            <Swipe ref={o => swipeEl = o} callback={changeButtonColour} startSlide={0} auto={0} style={ chatSelected ? {pointerEvents: "all"} : {pointerEvents: "none"} }  >
                 <SwipeItem>
-                    <ChatList  goToChat={goToChat} chats={chats}></ChatList>
+                    <ChatList setReloadContacts={setReloadContacts} currentUserInfo={currentUserInfo} contactRequests={contactRequests} goToChat={goToChat} chats={chats}></ChatList>
                 </SwipeItem>
-                <SwipeItem>
+                <SwipeItem style={chatSelected ? {} : {display: "none"} }>
                     <ChatView currentUserInfo={currentUserInfo} newSentMessage={newSentMessage} messageList={viewMessages} chatID={chatID}></ChatView>
                 </SwipeItem>
-                <SwipeItem></SwipeItem>
+                <SwipeItem>
+                </SwipeItem>
+
             </Swipe>            
             </div>
         </div>

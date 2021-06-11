@@ -1,5 +1,5 @@
 import Message from "./Message"
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from './contexts/AuthContext'
 
 const ChatView = (props) => {
@@ -7,9 +7,11 @@ const ChatView = (props) => {
     let messageList = props.messageList
     const newMessageList = Object.keys(messageList).map((key)=> [Number(key), messageList[key]])
     const { currentUser } = useAuth()
+    const [keyboardOpen, isKeyboardOpen] = useState(false)
+    const messageHolderREF = useRef()
+    const sendMessagesHolderREF = useRef()
     let newSentMessage = props.newSentMessage
     let chatID = props.chatID
-    console.log(newMessageList)
 
     useEffect(() => {
         var messageArea = document.querySelector("div.sendMessage");
@@ -17,10 +19,11 @@ const ChatView = (props) => {
         messageTextElement.addEventListener("focus",moveTextArea, false);
         messageTextElement.addEventListener("blur",moveTextAreaBack, false);
         function moveTextArea(){
-            messageArea.style.paddingBottom = "50px"
+            isKeyboardOpen(true)
+            console.log(sendMessagesHolderREF.current.offsetTop)
         }
         function moveTextAreaBack(){
-            messageArea.style.paddingBottom = "10px"
+            isKeyboardOpen(false)
         }
     },[])
 
@@ -33,7 +36,7 @@ const ChatView = (props) => {
 
     return ( 
         <div className="chatView">
-            <div className="messages">
+            <div className="messages" ref={messageHolderREF}>
                 {newMessageList.map((message) => (
                     <Message 
                     key={message[1].messageID} 
@@ -44,11 +47,16 @@ const ChatView = (props) => {
                     }></Message>
                 ))}
             </div>
-            <div className="sendMessage">
-                <textarea wrap="hard" placeholder='Type a message' type="text" className="messageInput" />
-                <button className="sendMessageButton" onClick={() => newSentMessage([{chatID},{authorID:currentUser.uid ,author: currentUserInfo.display_name, time: '1:25 PM', content:getText()}])}> 
+            <div className="sendMessage" ref={sendMessagesHolderREF}>
+                <div className="tempHolder">
+                    <textarea wrap="hard" placeholder='Type a message' type="text" className="messageInput" />
+                <button className="sendMessageButton" onMouseDown={(e) => newSentMessage(e, [{chatID},{authorID:currentUser.uid ,author: currentUserInfo.display_name, time: '1:25 PM', content:getText()}])}> 
                     <img src="message.svg" alt="" />
                 </button>
+                </div>
+                
+                {keyboardOpen && <div className="keyboardPadding"></div>}
+                
             </div>
         </div>
      );

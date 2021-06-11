@@ -6,18 +6,19 @@ import Profile from './Profile';
 import Signup from './Signup'
 import { AuthProvider } from './contexts/AuthContext';
 import { useState } from 'react';
+import AddContact from './AddContact';
 
 
 
 function App() {
   const [currentUserInfo, setCurrentUserInfo] = useState()
-
+  const [addingContact, setAddingContact] = useState(false)
   return (
     
     <Router>
       <AuthProvider>
       <div className="App">
-        <Navbar></Navbar>
+        <Navbar setAddingContact={setAddingContact}></Navbar>
         <Switch>
           <Route exact path="/signin">
             <LoginPage ></LoginPage>
@@ -29,6 +30,7 @@ function App() {
             <LoginPage></LoginPage>
           </Route>
           <Route exact path="/dashboard">
+            {addingContact && <AddContact currentUserInfo={currentUserInfo} setAddingContact={setAddingContact}></AddContact>}
             <Dashboard currentUserInfo={currentUserInfo} setCurrentUserInfo={setCurrentUserInfo} ></Dashboard>
           </Route>
           <Route exact path="/profile">

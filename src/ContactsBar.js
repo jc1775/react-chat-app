@@ -76,7 +76,6 @@ const ContactsBar = (props) => {
     }
 
     function dragStart(e) {
-        
         if (maximized === false && minimized === true) {
             startListeningMaxMove()
             if (e.type === "touchstart") {
@@ -184,6 +183,7 @@ const ContactsBar = (props) => {
                 
                 miniButtonEle.style.pointerEvents = "none"
                 clearContacts()
+                setMinimizeEverything(true)
 
                 setTimeout(function(){
                     newChatWindow.style.pointerEvents = "none"
@@ -235,7 +235,6 @@ const ContactsBar = (props) => {
  
     function addMiniContactListeners() {
         allMiniContacts.forEach(element => {
-            console.log("Listener Added")
             element.addEventListener("touchstart", miniContactDragStart, false);
             element.addEventListener("touchend", miniContactDragEnd, false);
     
@@ -287,6 +286,7 @@ const ContactsBar = (props) => {
     }
 
     function miniContactDragStart(e) {
+
         if (maximized === true) {
             startListeningMaxMove()
             if (e.type === "touchstart") {
@@ -326,6 +326,7 @@ const ContactsBar = (props) => {
     }
 
     function miniContactDrag(e) {
+
         var scrollLeeway = 2
         if (contactActive1){
             if (e.type === "touches" || e.type === "touchmove"){
@@ -346,9 +347,7 @@ const ContactsBar = (props) => {
                     lastYCheck = e.clientY
                     contactActive2 = true;
                 }
-            }
-            
-            
+            }       
         }
         if (contactActive2) {
             e.preventDefault();

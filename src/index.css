@@ -76,10 +76,34 @@ input:focus{
 }
 
 /* ProfilePage #################################################*/
+.backButton{
+  width: 50px;
+  height: 40px;
+  transform: rotate(90deg);
+}
+
+.backToDashBTN{
+  text-decoration: none;
+  background-color: #075E54;
+  align-self: center;
+  display: flex;
+  flex-direction: row;
+  border-radius: 15px;
+  padding: 10px 20px 10px 5px;
+}
+
+.backToDashBTN p{
+  color: white;
+  font-size: 25px;
+  font-weight: 700;
+}
+
 .profilePage{
   color: white;
   width: 100%;
   overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
   
 }
 
@@ -272,6 +296,7 @@ input:focus{
   margin: 10px 10px 5px 15px ;
 }
 
+
 .sent .name{
   display: none;
 }
@@ -318,12 +343,26 @@ input:focus{
 
 .sendMessage{
   position: absolute;
+  bottom: 0vh;
   padding-bottom: 10px;
-  bottom: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   background-color: #333;
-  height: 10vh;
+  height: fit-content;
+  width: 100%;
+}
+
+.tempHolder{
+  display: flex;
+  flex-direction: row;
+  align-content: center;
+  align-items: center;
+  width: 100%;
+}
+.keyboardPadding{
+  background-color: #333;
+  height: 7vh;
   width: 100%;
 }
 /* Chat Item ######################################################*/
@@ -356,6 +395,7 @@ input:focus{
   margin-right: auto;
 }
 .chatItem {
+  pointer-events: all;
   height: 8vh;
   border-bottom: darkslategrey solid 1px;
   padding: 20px;
@@ -414,12 +454,13 @@ input:focus{
   border: none;
   background-color: #075E54;
   font-weight: 700;
-  font-size: 20px;
+  font-size: 15px;
 }
 .dashboardWindow .swipe{
   margin-top: 0;
 }
 .swipe {
+  pointer-events: none;
   overflow: hidden;
   visibility: hidden;
   position: relative;
@@ -556,6 +597,7 @@ input:focus{
     position: relative;
   }
 /*  Navbar Signed In############################################# */
+
 .navbarLoggedIn{
   z-index: 9999;
 }
@@ -776,4 +818,182 @@ input:focus{
 /* Change the background color of the dropdown button when the dropdown content is shown */
 .dropdown:hover .dropbtn {
   transform: scale(1.8)  rotate(360deg);
+}
+
+
+/* Add Contact ###################################################*/
+
+.addContact{
+  position: absolute;
+  height: 100vh;
+  top: 0vh;
+  width: 100vw;
+  background-color: rgba(0,0,0,0.7);;
+  z-index: 500;
+  display: flex;
+  justify-content: center;
+}
+
+.addContact .addContactWindow{
+  background-color: #333;
+  width: 90%;
+  position: relative;
+  top: 25%;
+  height: fit-content;
+  border-radius: 15px;
+  pointer-events: all;
+}
+
+.addContactWindow h2{
+  color: white;
+  text-align: center;
+  padding: 15px;
+}
+.contactSearchForm{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0px 30px 0px;
+}
+.contactSearchBar{
+  width: 80%;
+  height: 18px;
+  border-radius: 10vh;
+  border: none;
+  padding: 15px;
+  font-weight: 500;
+  color: white;
+  font-size: 18px;
+  overflow-wrap: normal;
+  background-color: #075E54;
+  margin: 15px 0px 25px 0px;
+}
+
+.contactSearchSubmit{
+  width: fit-content;
+  border-radius: 10px;
+  border: none;
+  padding: 10px;
+  font-weight: 500;
+  color: white;
+  font-size: 18px;
+  overflow-wrap: normal;
+  background-color: #075E54;
+}
+
+.contactFoundWindow{
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.foundContactPicture{
+  position: relative;
+  margin-top: -70px;
+}
+
+.foundContactPicture img{
+  width: 200px;
+  height: 200px;
+  border-radius: 25%;
+}
+
+.sendContactRequest{
+  width: fit-content;
+  border-radius: 10px;
+  border: none;
+  margin-top: 20px;
+  padding: 10px 25px 10px 25px;
+  font-weight: 500;
+  color: white;
+  font-size: 18px;
+  overflow-wrap: normal;
+  background-color: #075E54;  
+}
+
+.contactFoundWindow h2{
+  font-size: 20px;
+}
+
+/* Contact Requests #################################################################*/
+.contactRequestItem{
+  height: 10vh;
+  border-bottom: darkslategrey solid 1px;
+  padding: 20px;
+  background-color: rgb(68, 126, 29);
+  color: white;
+  display: grid;
+  grid-template-columns: 20% 80%;
+  grid-template-rows: 1fr;
+  gap: 0px 0px;
+  grid-template-areas:
+    ". chatInfo";
+}
+.contactRequestInfo{
+  border: none;
+  background: none;
+  padding-left: 0px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 0.8fr 1.2fr;
+  gap: 0px 0px;
+  grid-template-areas:
+    "nameAndDate"
+    ".";
+  grid-area: chatInfo;
+}
+
+.contactRequestItem img{
+  border-radius: 50%;
+  max-height: 55px;
+  max-width: 55px;
+}
+
+.contactRequestItem p{
+  color: white;
+}
+.contactRequestItem .date{
+  font-size: 10px;
+  margin-left: auto;
+}
+
+.contactRequestItem .name{
+  font-size: 18px;
+  font-weight: 700;
+  margin-right: auto;
+}
+
+.contactRequestItem .previewText{
+  font-size: 15px;
+  color: lightgray;
+  margin-right: auto;
+  margin-bottom: 5px;
+}
+
+.textAndButtons{
+  display: flex;
+  flex-direction: column;
+}
+
+.acceptDeclineButtons{
+  width: 70%;
+  display: flex;
+  justify-content: space-around;
+}
+
+.acceptDeclineButtons button{
+  border-radius: 15px;
+  margin-top: 5px;
+  padding: 3px 10px 3px 10px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.acceptDeclineButtons .accept{
+  background-color: limegreen;
+}
+
+.acceptDeclineButtons .decline{
+  background-color: red;
 }

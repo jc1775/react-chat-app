@@ -35,6 +35,11 @@ const Signup = () => {
                     uid: cred.user.uid,
                     activeChats: [],
                     contact_picture: 'logo192.png',
+                    contactList: [],
+                    contactInvites: [],
+                    receivedContactInvites: [],
+                    receivedContactInvitesList: [],
+                    contactInvitesList: [],
                 }
                 USERSref.doc(cred.user.uid).set(newUser)
             })

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ContactTag from "./ContactTag";
 import firebase from "./firebase"
 import 'firesql/rx'; // <-- Important! Don't forget
@@ -8,11 +8,16 @@ import { useAuth } from './contexts/AuthContext'
 const NewChat = (props) => {
     let chatMembers = props.chatGroup
     let setMinimizeEverything = props.setMinimizeEverything
-
+    let minimizeEverything = props.minimizeEverything
+    
     const startChattingButtonREF = useRef()
     const chatNameREF = useRef()
     const contactSearchREF = useRef()
     const chatMembersList = useRef()
+
+    const [disableChatNameInput, setChatNameInputDisabled] = useState(true)
+    const [chatNameInputPlaceholder, setChatNameInputPlaceholder] = useState("Add contacts to chat")
+    const [isGroupChat, setIsGroupChat] = useState(false)
 
     const chatsRef = firebase.firestore().collection("chats")
     const usersRef = firebase.firestore().collection("users")
@@ -39,25 +44,30 @@ const NewChat = (props) => {
     function handleStartChat() {
         if (chatMembers.length === 0) {
             console.log("No contacts added")
-        } else if (chatNameREF.current.value === '') {
+        }  else if (chatNameREF.current.value === '') {
             console.log("No name added")
+        } else if (chatNameREF.current.value.length > 30) {
+            console.log("Name too long")
         } else {
             //startChattingButtonREF.current.style.transform = "translate3d(" + 1000 + "%, " + 0 + "px, 0)";
             var newChatRef = chatsRef.doc();
-             var current = new Date();
+            var current = new Date();
             newChatRef.set({
                 chatImage: 'logo192.png',
                 chatName: chatNameREF.current.value,
-                recentText: 'Place holder text',
+                recentText: 'New Chat!',
                 timeUpdated: current.toLocaleTimeString().slice(0,-6) + " " +  current.toLocaleTimeString().slice(-2),
                 id: newChatRef.id,
-                moderators: [currentUser.uid]
+                moderators: [currentUser.uid],
+                timestamp: firebase.firestore.Timestamp.fromDate(new Date()),
             })
             var chatMembersEmails = [currentUser.email]
             chatMembers.forEach((member) => {
                 chatMembersEmails.push(member.getAttribute("contact-email"))
             })
-            console.log(chatMembersEmails)
+            newChatRef.update({
+                singleChat: isGroupChat ? false : chatMembersEmails,
+            })
             usersRef.where("email", "in", chatMembersEmails).get().then((members) =>{
                 members.forEach((member) => {
                     var memberRef = firebase.firestore().doc("users/"+member.data().uid)
@@ -71,6 +81,28 @@ const NewChat = (props) => {
             //setReloadChats(true)
         }
     }
+
+    useEffect(() => {
+        if (chatMembers.length === 1) {
+            chatNameREF.current.value = chatMembers[0].getAttribute("contact-display-name")
+        } else if (chatMembers.length >= 2) {
+            chatNameREF.current.value = ''
+            setIsGroupChat(true)
+            setChatNameInputDisabled(false)
+            setChatNameInputPlaceholder("Enter group chat name")
+            
+        }
+    },[chatMembers])
+
+    useEffect(() => {
+        chatNameREF.current.value = ''
+        contactSearchREF.current.value = ''
+        setIsGroupChat(false)
+        contactsElements = document.querySelector("div.contactsHolder").childNodes
+        contactsElements.forEach((ele) => {
+            ele.style.display = "block"
+        })
+    },[minimizeEverything])
     
     return ( 
         
@@ -84,10 +116,10 @@ const NewChat = (props) => {
                 
             </div>
             <div className="chatContext">
-                <input type="text" placeholder="Chat name..." className="chatNameInput" ref={chatNameREF} />
+                <input disabled={disableChatNameInput} type="text" placeholder={chatNameInputPlaceholder} className="chatNameInput" ref={chatNameREF} />
 
-                <h2>Chat Members</h2>
-                <div className="tagHolder">
+                { isGroupChat && <h2>Group Chat Members</h2> } 
+                <div className="tagHolder" style={ !isGroupChat ? {display:"none"} : {display: "flex"} } >
                     {chatMembers.map((member) => (
                         <ContactTag email={member.getAttribute("contact-email")} key={member.getAttribute("contact-email")} display_name={member.getAttribute('contact-display-name')}></ContactTag>
                     ))}
